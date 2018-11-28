@@ -563,7 +563,7 @@ int database_consumer(replay_item *item) {
 									/* count statements and errors for statistics */
 									++stat_stmt;
 									result_status = PQresultStatus(result);
-									debug(2, "Session 0x" UINT64_FORMAT " got got query response (%s)\n",
+									debug(1, "Session 0x" UINT64_FORMAT " got got query response (%s)\n",
 										conn->session_id,
 										(PGRES_TUPLES_OK == result_status) ? "PGRES_TUPLES_OK" :
 										((PGRES_COMMAND_OK == result_status) ? "PGRES_COMMAND_OK" :
@@ -577,6 +577,7 @@ int database_consumer(replay_item *item) {
 										&& (PGRES_NONFATAL_ERROR != result_status))
 									{
 										++stat_errors;
+										debug(1, "Error message: %s", PQerrorMessage(conn->db_conn));
 									}
 
 									PQclear(result);
