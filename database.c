@@ -577,7 +577,7 @@ int database_consumer(replay_item *item) {
 										&& (PGRES_NONFATAL_ERROR != result_status))
 									{
 										++stat_errors;
-										debug(1, "Error message: %s", PQresultErrorMessage(conn->db_conn));
+										debug(1, "Error message: %s", PQresultErrorMessage(result));
 									}
 
 									PQclear(result);
