@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libpq-fe.h>
+#include <poll.h>
 #ifdef HAVE_SYS_SELECT_H
 #	include <sys/select.h>
 #else
@@ -158,15 +159,29 @@ static int do_select(int n, fd_set *rfds, fd_set *wfds, fd_set *xfds, struct tim
 	return rc;
 }
 
+static int do_poll(int n, int for_read, int timeout) {
+	int rc;
+	struct pollfd pfd;
+	pfd.fd = n;
+	pfd.events = for_read ? POLLIN : POLLOUT;
+	rc = poll(&pfd, 1, timeout);
+	if (-1 == rc) {
+		perror("Error in poll()");
+	}
+	return rc;
+}
+
 /* checks if a certain socket can be read or written without blocking */
 
 static int poll_socket(int socket, int for_read, char * const errmsg_prefix) {
-	fd_set fds;
-	struct timeval zero = { 0, 0 };
+	// fd_set fds;
+	// struct timeval zero = { 0, 0 };
 
-	FD_ZERO(&fds);
-	FD_SET(socket, &fds);
-	return do_select(socket + 1, for_read ? &fds : NULL, for_read ? NULL : &fds, NULL, &zero);
+	// FD_ZERO(&fds);
+	// FD_SET(socket, &fds);
+	// return do_select(socket + 1, for_read ? &fds : NULL, for_read ? NULL : &fds, NULL, &zero);
+	return do_poll(socket, for_read, 0);
+
 }
 
 /* sleep routine that should work on all platforms */
@@ -563,7 +578,7 @@ int database_consumer(replay_item *item) {
 									/* count statements and errors for statistics */
 									++stat_stmt;
 									result_status = PQresultStatus(result);
-									debug(2, "Session 0x" UINT64_FORMAT " got got query response (%s)\n",
+									debug(1, "Session 0x" UINT64_FORMAT " got got query response (%s)\n",
 										conn->session_id,
 										(PGRES_TUPLES_OK == result_status) ? "PGRES_TUPLES_OK" :
 										((PGRES_COMMAND_OK == result_status) ? "PGRES_COMMAND_OK" :
@@ -577,6 +592,7 @@ int database_consumer(replay_item *item) {
 										&& (PGRES_NONFATAL_ERROR != result_status))
 									{
 										++stat_errors;
+										debug(1, "Error message: %s", PQresultErrorMessage(result));
 									}
 
 									PQclear(result);
