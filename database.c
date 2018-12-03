@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libpq-fe.h>
+#include <poll.h>
 #ifdef HAVE_SYS_SELECT_H
 #	include <sys/select.h>
 #else
